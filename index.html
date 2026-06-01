@@ -1,0 +1,573 @@
+<h2 class="sr-only">HR Call Centre Interview Simulator — speak your answers and get feedback on your communication skills</h2>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  #app {
+    font-family: 'DM Sans', sans-serif;
+    color: var(--color-text-primary);
+    padding: 1.5rem 0;
+    max-width: 680px;
+  }
+
+  .header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+
+  .avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--color-background-info);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 500; color: var(--color-text-info);
+    flex-shrink: 0;
+  }
+
+  .header-text { flex: 1; }
+  .header-text h1 { font-family: 'DM Serif Display', serif; font-size: 18px; font-weight: 400; margin-bottom: 2px; }
+  .header-text p { font-size: 13px; color: var(--color-text-secondary); }
+
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #aaa; flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .status-dot.live { background: #3a3; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .question-card {
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .q-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+    color: var(--color-text-tertiary); text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .q-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px; font-weight: 400; line-height: 1.5;
+    color: var(--color-text-primary);
+  }
+
+  .q-nav {
+    display: flex; gap: 8px; margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .q-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--color-border-tertiary);
+    transition: background 0.3s; cursor: default;
+  }
+  .q-dot.done { background: #3a3; }
+  .q-dot.active { background: var(--color-text-primary); }
+
+  .mic-section {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 12px; padding: 1.25rem;
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    margin-bottom: 1rem;
+  }
+
+  .mic-btn {
+    width: 72px; height: 72px; border-radius: 50%;
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 28px;
+    transition: all 0.2s;
+    color: var(--color-text-primary);
+  }
+  .mic-btn:hover { background: var(--color-background-secondary); }
+  .mic-btn.recording {
+    border-color: #c33; background: #fff0f0;
+    animation: ring 1s infinite;
+  }
+  @keyframes ring { 0%,100%{box-shadow:0 0 0 0 rgba(200,50,50,0.3)} 50%{box-shadow:0 0 0 10px rgba(200,50,50,0)} }
+
+  .mic-label { font-size: 13px; color: var(--color-text-secondary); text-align: center; }
+
+  .wave-bars {
+    display: flex; align-items: center; gap: 3px; height: 32px;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .wave-bars.active { opacity: 1; }
+  .bar {
+    width: 4px; border-radius: 2px;
+    background: var(--color-text-secondary);
+    height: 8px; transition: height 0.1s;
+  }
+
+  .transcript-box {
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 0.75rem 1rem;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    min-height: 52px;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    border: 0.5px solid var(--color-border-tertiary);
+  }
+
+  .transcript-box.has-text { color: var(--color-text-primary); }
+
+  .action-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+
+  button.pill {
+    flex: 1; padding: 9px 14px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  button.pill:hover { background: var(--color-background-secondary); }
+  button.pill:active { transform: scale(0.98); }
+  button.pill:disabled { opacity: 0.4; cursor: default; }
+  button.pill.primary {
+    background: var(--color-text-primary);
+    color: var(--color-background-primary);
+    border-color: transparent;
+  }
+  button.pill.primary:hover { opacity: 0.85; }
+
+  .feedback-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.25rem;
+    display: none;
+    margin-bottom: 1rem;
+  }
+  .feedback-card.visible { display: block; }
+
+  .fb-header { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 10px; }
+
+  .score-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .score-pill {
+    padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    background: var(--color-background-secondary);
+    color: var(--color-text-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+  }
+  .score-pill span { font-weight: 500; }
+
+  .fb-text { font-size: 14px; line-height: 1.7; color: var(--color-text-primary); }
+
+  .loading-dots { display: inline-flex; gap: 4px; align-items: center; }
+  .loading-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-secondary); animation: blink 1.2s infinite; }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+  .progress-bar { height: 2px; background: var(--color-border-tertiary); border-radius: 1px; margin-bottom: 1.5rem; }
+  .progress-fill { height: 100%; background: var(--color-text-primary); border-radius: 1px; transition: width 0.4s; }
+
+  .error-box {
+    background: #fff3f3; border: 0.5px solid #f0a0a0;
+    border-radius: var(--border-radius-md);
+    padding: 0.75rem 1rem; font-size: 13px; color: #a33;
+    margin-bottom: 1rem; display: none;
+  }
+  .error-box.visible { display: block; }
+
+  .finish-screen {
+    display: none; text-align: center; padding: 2rem 1rem;
+  }
+  .finish-screen.visible { display: block; }
+  .finish-screen h2 { font-family: 'DM Serif Display', serif; font-size: 22px; font-weight: 400; margin-bottom: 8px; }
+  .finish-screen p { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1.5rem; }
+
+  .perm-notice {
+    background: #fffbea;
+    border: 0.5px solid #e0c84a;
+    border-radius: var(--border-radius-md);
+    padding: 0.75rem 1rem;
+    font-size: 13px; color: #7a6000;
+    margin-bottom: 1rem;
+    display: none;
+  }
+  .perm-notice.visible { display: block; }
+</style>
+
+<div id="app">
+  <div class="header">
+    <div class="avatar">HR</div>
+    <div class="header-text">
+      <h1>Call Centre Interview</h1>
+      <p>Speak your answer — AI judges your communication skills</p>
+    </div>
+    <div class="status-dot" id="statusDot"></div>
+  </div>
+
+  <div id="mainArea">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+
+    <div class="q-nav" id="qNav"></div>
+
+    <div class="question-card">
+      <div class="q-label" id="qLabel">Question 1 of 10</div>
+      <div class="q-text" id="qText">Loading question...</div>
+    </div>
+
+    <div class="perm-notice" id="permNotice">
+      <i class="ti ti-info-circle" aria-hidden="true"></i>
+      Microphone access is required. Please click allow when your browser prompts, then try again.
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="mic-section">
+      <div class="wave-bars" id="waveBars">
+        <div class="bar" id="b1"></div><div class="bar" id="b2"></div>
+        <div class="bar" id="b3"></div><div class="bar" id="b4"></div>
+        <div class="bar" id="b5"></div><div class="bar" id="b6"></div>
+        <div class="bar" id="b7"></div>
+      </div>
+      <button class="mic-btn" id="micBtn" aria-label="Start recording">
+        <i class="ti ti-microphone" aria-hidden="true"></i>
+      </button>
+      <div class="mic-label" id="micLabel">Tap to start speaking</div>
+    </div>
+
+    <div class="transcript-box" id="transcriptBox">Your answer will appear here as you speak...</div>
+
+    <div class="action-row">
+      <button class="pill" id="clearBtn" onclick="clearAnswer()">
+        <i class="ti ti-refresh" aria-hidden="true"></i> Clear
+      </button>
+      <button class="pill primary" id="judgeBtn" onclick="judgeAnswer()" disabled>
+        <i class="ti ti-brain" aria-hidden="true"></i> Judge my answer ↗
+      </button>
+    </div>
+
+    <div class="feedback-card" id="feedbackCard">
+      <div class="fb-header">Feedback from HR</div>
+      <div class="score-row" id="scoreRow"></div>
+      <div class="fb-text" id="fbText"></div>
+      <div style="margin-top:1rem">
+        <button class="pill primary" id="nextBtn" onclick="nextQuestion()" style="flex:none;width:100%">
+          Next question <i class="ti ti-arrow-right" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="finish-screen" id="finishScreen">
+    <h2>Interview Complete</h2>
+    <p>You've answered all 10 questions. Great job practising!</p>
+    <div id="finalScores" style="margin-bottom:1.5rem;text-align:left;"></div>
+    <button class="pill primary" onclick="restart()" style="margin:0 auto;display:inline-flex;">
+      <i class="ti ti-refresh" aria-hidden="true"></i> Start again
+    </button>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  "Tell me about yourself and why you want to work in a call centre.",
+  "How do you handle an angry or frustrated customer on the phone?",
+  "Can you describe a time you went above and beyond for a customer?",
+  "How do you stay calm and focused when handling a high volume of calls?",
+  "What does excellent customer service mean to you?",
+  "How would you handle a call where you don't know the answer to the customer's question?",
+  "Describe your experience with computer systems or CRM tools during calls.",
+  "How do you manage your time when juggling multiple tasks in a busy call centre?",
+  "Tell me about a time you disagreed with a colleague. How did you resolve it?",
+  "Where do you see yourself in two years, and how does this role fit your goals?"
+];
+
+let currentQ = 0;
+let transcript = "";
+let mediaRecorder = null;
+let recognition = null;
+let isRecording = false;
+let scores = [];
+let waveInterval = null;
+let audioStream = null;
+let analyser = null;
+let animFrame = null;
+
+const micBtn = document.getElementById('micBtn');
+const micLabel = document.getElementById('micLabel');
+const transcriptBox = document.getElementById('transcriptBox');
+const feedbackCard = document.getElementById('feedbackCard');
+const judgeBtn = document.getElementById('judgeBtn');
+const errorBox = document.getElementById('errorBox');
+const permNotice = document.getElementById('permNotice');
+const statusDot = document.getElementById('statusDot');
+const waveBars = document.getElementById('waveBars');
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.classList.add('visible');
+  setTimeout(() => errorBox.classList.remove('visible'), 6000);
+}
+
+function hideError() { errorBox.classList.remove('visible'); }
+
+function renderNav() {
+  const nav = document.getElementById('qNav');
+  nav.innerHTML = '';
+  QUESTIONS.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'q-dot' + (i < currentQ ? ' done' : i === currentQ ? ' active' : '');
+    nav.appendChild(d);
+  });
+}
+
+function loadQuestion() {
+  document.getElementById('qLabel').textContent = `Question ${currentQ + 1} of ${QUESTIONS.length}`;
+  document.getElementById('qText').textContent = QUESTIONS[currentQ];
+  document.getElementById('progressFill').style.width = ((currentQ / QUESTIONS.length) * 100) + '%';
+  renderNav();
+  transcript = '';
+  transcriptBox.textContent = 'Your answer will appear here as you speak...';
+  transcriptBox.classList.remove('has-text');
+  feedbackCard.classList.remove('visible');
+  judgeBtn.disabled = true;
+}
+
+async function setupAudioVisualizer(stream) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = ctx.createMediaStreamSource(stream);
+    analyser = ctx.createAnalyser();
+    analyser.fftSize = 64;
+    source.connect(analyser);
+    const bars = [document.getElementById('b1'),document.getElementById('b2'),document.getElementById('b3'),
+      document.getElementById('b4'),document.getElementById('b5'),document.getElementById('b6'),document.getElementById('b7')];
+    const dataArr = new Uint8Array(analyser.frequencyBinCount);
+    function draw() {
+      if (!isRecording) return;
+      animFrame = requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(dataArr);
+      bars.forEach((b, i) => {
+        const val = dataArr[i * 3] || 0;
+        b.style.height = Math.max(6, (val / 255) * 30) + 'px';
+      });
+    }
+    draw();
+  } catch(e) {}
+}
+
+function startRecording() {
+  if (isRecording) { stopRecording(); return; }
+
+  hideError();
+  permNotice.classList.remove('visible');
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showError("Speech recognition isn't supported in this browser. Please use Chrome or Edge.");
+    return;
+  }
+
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      audioStream = stream;
+      setupAudioVisualizer(stream);
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      let finalTranscript = transcript;
+
+      recognition.onstart = () => {
+        isRecording = true;
+        micBtn.classList.add('recording');
+        micBtn.innerHTML = '<i class="ti ti-microphone-off" aria-hidden="true"></i>';
+        micLabel.textContent = 'Listening... tap to stop';
+        statusDot.classList.add('live');
+        waveBars.classList.add('active');
+      };
+
+      recognition.onresult = (e) => {
+        let interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) { finalTranscript += t + ' '; }
+          else { interim = t; }
+        }
+        transcript = finalTranscript;
+        const display = (finalTranscript + interim).trim();
+        if (display) {
+          transcriptBox.textContent = display;
+          transcriptBox.classList.add('has-text');
+          judgeBtn.disabled = false;
+        }
+      };
+
+      recognition.onerror = (e) => {
+        if (e.error === 'not-allowed' || e.error === 'permission-denied') {
+          permNotice.classList.add('visible');
+          showError("Microphone access denied. Please allow microphone in your browser settings.");
+        } else if (e.error === 'no-speech') {
+          showError("No speech detected. Please speak louder or check your microphone.");
+        } else if (e.error === 'network') {
+          showError("Network error with speech recognition. Check your connection.");
+        } else {
+          showError("Mic error: " + e.error + ". Try clicking mic again.");
+        }
+        stopRecording();
+      };
+
+      recognition.onend = () => {
+        if (isRecording) {
+          try { recognition.start(); } catch(e) {}
+        }
+      };
+
+      try {
+        recognition.start();
+      } catch(e) {
+        showError("Could not start microphone: " + e.message);
+      }
+    })
+    .catch(err => {
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        permNotice.classList.add('visible');
+        showError("Microphone access denied. Click the camera/mic icon in your browser's address bar to allow.");
+      } else if (err.name === 'NotFoundError') {
+        showError("No microphone found. Please connect a microphone and try again.");
+      } else {
+        showError("Microphone error: " + err.message);
+      }
+    });
+}
+
+micBtn.addEventListener('click', startRecording);
+
+function stopRecording() {
+  isRecording = false;
+  if (recognition) { try { recognition.stop(); } catch(e) {} recognition = null; }
+  if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  micBtn.classList.remove('recording');
+  micBtn.innerHTML = '<i class="ti ti-microphone" aria-hidden="true"></i>';
+  micLabel.textContent = 'Tap to start speaking';
+  statusDot.classList.remove('live');
+  waveBars.classList.remove('active');
+  document.querySelectorAll('.bar').forEach(b => b.style.height = '8px');
+}
+
+function clearAnswer() {
+  stopRecording();
+  transcript = '';
+  transcriptBox.textContent = 'Your answer will appear here as you speak...';
+  transcriptBox.classList.remove('has-text');
+  judgeBtn.disabled = true;
+  feedbackCard.classList.remove('visible');
+}
+
+async function judgeAnswer() {
+  if (!transcript.trim()) { showError("Please record your answer first."); return; }
+  stopRecording();
+
+  judgeBtn.disabled = true;
+  feedbackCard.classList.add('visible');
+  document.getElementById('scoreRow').innerHTML = '';
+  document.getElementById('fbText').innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div> Analysing your response...';
+
+  const prompt = `You are a strict but fair HR interviewer for a call centre. The candidate answered:
+
+Question: "${QUESTIONS[currentQ]}"
+Answer: "${transcript.trim()}"
+
+Evaluate strictly for a call centre role. Give JSON only:
+{
+  "clarity": <1-10>,
+  "confidence": <1-10>,
+  "relevance": <1-10>,
+  "communication": <1-10>,
+  "overall": <1-10>,
+  "feedback": "<2-3 sentences: what they did well, what to improve, specific tip for call centre>"
+}`;
+
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content.map(c => c.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    scores.push(parsed.overall);
+
+    const metrics = [
+      { label: 'Clarity', val: parsed.clarity },
+      { label: 'Confidence', val: parsed.confidence },
+      { label: 'Relevance', val: parsed.relevance },
+      { label: 'Communication', val: parsed.communication },
+      { label: 'Overall', val: parsed.overall }
+    ];
+
+    document.getElementById('scoreRow').innerHTML = metrics.map(m =>
+      `<div class="score-pill">${m.label} <span>${m.val}/10</span></div>`
+    ).join('');
+
+    document.getElementById('fbText').textContent = parsed.feedback;
+
+  } catch(e) {
+    document.getElementById('fbText').textContent = "Could not get feedback. Please check your connection and try again.";
+    judgeBtn.disabled = false;
+  }
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= QUESTIONS.length) {
+    showFinish();
+  } else {
+    loadQuestion();
+  }
+}
+
+function showFinish() {
+  document.getElementById('mainArea').style.display = 'none';
+  const fin = document.getElementById('finishScreen');
+  fin.classList.add('visible');
+  document.getElementById('progressFill').style.width = '100%';
+
+  const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length) : 0;
+  const grade = avg >= 8 ? '🌟 Excellent' : avg >= 6 ? '✅ Good' : avg >= 4 ? '⚡ Needs Work' : '📚 Keep Practising';
+  document.getElementById('finalScores').innerHTML = `
+    <div class="question-card">
+      <div class="q-label">Your performance summary</div>
+      <div style="font-size:22px;font-family:'DM Serif Display',serif;margin-bottom:6px;">${grade}</div>
+      <div style="font-size:14px;color:var(--color-text-secondary);">Average score: ${avg}/10 across ${scores.length} questions</div>
+    </div>`;
+}
+
+function restart() {
+  currentQ = 0; scores = [];
+  document.getElementById('mainArea').style.display = 'block';
+  document.getElementById('finishScreen').classList.remove('visible');
+  loadQuestion();
+}
+
+loadQuestion();
+</script>
